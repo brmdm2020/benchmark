@@ -7,7 +7,7 @@ on:
 
 jobs:
   benchmark:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360  # 6小时超时
     env:
       DEBIAN_FRONTEND: noninteractive
@@ -74,7 +74,7 @@ jobs:
         ./benchmark.sh 2>&1 | tee benchmark.log
 
     - name: Upload Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: |
