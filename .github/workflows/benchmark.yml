@@ -1,49 +1,82 @@
-name: Performance Benchmark
+name: Kernel Build Benchmark
 
-on: [workflow_dispatch]  # 手动触发
+on:
+  workflow_dispatch:  # 手动触发
+  schedule:
+    - cron: '0 0 * * 0'  # 每周自动运行（可选）
 
 jobs:
   benchmark:
-    runs-on: ubuntu-latest  # 使用最新版 Ubuntu 运行器
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6小时超时
+    env:
+      DEBIAN_FRONTEND: noninteractive
 
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: System Information
+    - name: Free Disk Space
       run: |
-        echo "===== CPU Info ====="
-        lscpu
-        echo "===== Memory Info ====="
-        free -h
-        echo "===== Disk Speed ====="
-        dd if=/dev/zero of=./testfile bs=1G count=1 oflag=direct
-        echo "===== Kernel Version ====="
-        uname -a
+        # 清理预装内容释放空间
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        df -h
 
-    - name: Install Dependencies
+    - name: Run Benchmark
       run: |
-        sudo apt-get update
-        sudo apt-get install -y bc gcc make libssl-dev flex bison libelf-dev
+        cat << 'EOF' > benchmark.sh
+        #!/bin/bash
+        set -eo pipefail
+        
+        # 精简版依赖安装
+        install_deps() {
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential git time sysbench fio bc \
+            libssl-dev flex bison libelf-dev mbw
+        }
 
-    - name: Download Linux Kernel
-      run: |
-        wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.5.tar.xz
-        tar -xf linux-6.5.tar.xz
-        cd linux-6.5
+        # 优化版内核编译测试
+        compile_kernel() {
+          git clone --depth 1 --branch v6.6 \
+            https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
+          cd linux
+          make localmodconfig  # 更小配置
+          time make -j$(nproc)
+          make clean
+        }
 
-    - name: Configure Kernel (Minimal)
-      run: |
-        make defconfig  # 使用默认配置减少编译时间
-        ./scripts/config --disable DEBUG_INFO  # 禁用调试信息以节省空间和时间
+        # 核心测试流程
+        main() {
+          echo "🟢 开始基准测试 @ $(date)"
+          echo "=== CPU测试 ==="
+          sysbench cpu --threads=$(nproc) run | grep 'events per second'
+          
+          echo "=== 内存测试 ==="
+          mbw -q 256 | grep AVG
 
-    - name: Build Kernel (Timed)
-      run: |
-        echo "===== Starting Kernel Build ====="
-        time make -j$(nproc)  # 使用全部可用核心编译
-        echo "===== Build Finished ====="
+          echo "=== 磁盘测试 ==="
+          fio --name=seqwrite --rw=write --bs=1M --size=500M --runtime=10s \
+            --end_fsync=1 --output-format=json | jq '.jobs[0].write.bw/1024 | floor' | awk '{print $1"MB/s"}'
+          
+          echo "=== 内核编译 ==="
+          compile_kernel
+        }
 
-    - name: Stress Test (Optional)
-      run: |
-        sudo apt-get install -y stress-ng
-        stress-ng --cpu $(nproc) --vm 1 --vm-bytes 2G --timeout 5m
+        # 错误处理
+        trap 'echo "❌ 错误发生在第 $LINENO 行"; exit 1' ERR
+        install_deps
+        main
+        EOF
+
+        chmod +x benchmark.sh
+        ./benchmark.sh 2>&1 | tee benchmark.log
+
+    - name: Upload Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: |
+          benchmark.log
+          linux/.config  # 保留配置文件
