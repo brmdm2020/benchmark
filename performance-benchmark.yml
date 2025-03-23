@@ -1,0 +1,398 @@
+name: GitHub Actions Performance Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_duration:
+        description: '测试持续时间(分钟)'
+        required: true
+        default: '10'
+      parallel_jobs:
+        description: '并行测试任务数'
+        required: true
+        default: '4'
+
+jobs:
+  system-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 获取系统信息
+        run: |
+          echo "## 系统信息" > system_info.md
+          echo "### CPU 信息" >> system_info.md
+          echo '```' >> system_info.md
+          lscpu >> system_info.md
+          echo '```' >> system_info.md
+          
+          echo "### 内存信息" >> system_info.md
+          echo '```' >> system_info.md
+          free -h >> system_info.md
+          echo '```' >> system_info.md
+          
+          echo "### 磁盘信息" >> system_info.md
+          echo '```' >> system_info.md
+          df -h >> system_info.md
+          echo '```' >> system_info.md
+
+          cat /proc/cpuinfo | grep "model name" | head -1 >> system_info.md
+          
+      - name: 上传系统信息
+        uses: actions/upload-artifact@v3
+        with:
+          name: system-info
+          path: system_info.md
+
+  cpu-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 安装性能测试工具
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sysbench time
+          
+      - name: CPU 性能测试
+        run: |
+          echo "## CPU 性能测试结果" > cpu_benchmark.md
+          echo "### 单线程性能" >> cpu_benchmark.md
+          echo '```' >> cpu_benchmark.md
+          sysbench cpu --cpu-max-prime=20000 --threads=1 run >> cpu_benchmark.md
+          echo '```' >> cpu_benchmark.md
+          
+          echo "### 多线程性能" >> cpu_benchmark.md
+          echo '```' >> cpu_benchmark.md
+          sysbench cpu --cpu-max-prime=20000 --threads=$(nproc) run >> cpu_benchmark.md
+          echo '```' >> cpu_benchmark.md
+          
+      - name: 上传CPU测试结果
+        uses: actions/upload-artifact@v3
+        with:
+          name: cpu-benchmark
+          path: cpu_benchmark.md
+
+  memory-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 安装性能测试工具
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sysbench
+          
+      - name: 内存性能测试
+        run: |
+          echo "## 内存性能测试结果" > memory_benchmark.md
+          echo "### 内存读取性能" >> memory_benchmark.md
+          echo '```' >> memory_benchmark.md
+          sysbench memory --memory-block-size=1K --memory-total-size=100G --memory-access-mode=seq read run >> memory_benchmark.md
+          echo '```' >> memory_benchmark.md
+          
+          echo "### 内存写入性能" >> memory_benchmark.md
+          echo '```' >> memory_benchmark.md
+          sysbench memory --memory-block-size=1K --memory-total-size=100G --memory-access-mode=seq write run >> memory_benchmark.md
+          echo '```' >> memory_benchmark.md
+          
+      - name: 上传内存测试结果
+        uses: actions/upload-artifact@v3
+        with:
+          name: memory-benchmark
+          path: memory_benchmark.md
+
+  disk-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 安装性能测试工具
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fio
+          
+      - name: 磁盘性能测试
+        run: |
+          echo "## 磁盘性能测试结果" > disk_benchmark.md
+          echo "### 顺序读取性能" >> disk_benchmark.md
+          echo '```' >> disk_benchmark.md
+          fio --name=seqread --rw=read --direct=1 --ioengine=libaio --bs=1M --size=1G --numjobs=4 --runtime=60 --group_reporting >> disk_benchmark.md
+          echo '```' >> disk_benchmark.md
+          
+          echo "### 顺序写入性能" >> disk_benchmark.md
+          echo '```' >> disk_benchmark.md
+          fio --name=seqwrite --rw=write --direct=1 --ioengine=libaio --bs=1M --size=1G --numjobs=4 --runtime=60 --group_reporting >> disk_benchmark.md
+          echo '```' >> disk_benchmark.md
+          
+          echo "### 随机读取性能" >> disk_benchmark.md
+          echo '```' >> disk_benchmark.md
+          fio --name=randread --rw=randread --direct=1 --ioengine=libaio --bs=4k --size=1G --numjobs=4 --runtime=60 --group_reporting >> disk_benchmark.md
+          echo '```' >> disk_benchmark.md
+          
+      - name: 上传磁盘测试结果
+        uses: actions/upload-artifact@v3
+        with:
+          name: disk-benchmark
+          path: disk_benchmark.md
+
+  kernel-compile-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 安装编译工具
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev time
+          
+      - name: 下载内核源码
+        run: |
+          wget https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.15.tar.xz
+          tar -xf linux-5.15.tar.xz
+          cd linux-5.15
+          
+      - name: 准备内核配置
+        run: |
+          cd linux-5.15
+          make defconfig
+          
+      - name: 编译内核并测量时间
+        run: |
+          cd linux-5.15
+          echo "## 内核编译性能测试" > ../kernel_compile_benchmark.md
+          echo "### 单线程编译时间" >> ../kernel_compile_benchmark.md
+          echo '```' >> ../kernel_compile_benchmark.md
+          /usr/bin/time -v make -j1 2>&1 | tee -a ../kernel_compile_benchmark.md
+          echo '```' >> ../kernel_compile_benchmark.md
+          
+          make clean
+          
+          echo "### 多线程编译时间 ($(nproc) 线程)" >> ../kernel_compile_benchmark.md
+          echo '```' >> ../kernel_compile_benchmark.md
+          /usr/bin/time -v make -j$(nproc) 2>&1 | tee -a ../kernel_compile_benchmark.md
+          echo '```' >> ../kernel_compile_benchmark.md
+          
+      - name: 上传内核编译测试结果
+        uses: actions/upload-artifact@v3
+        with:
+          name: kernel-compile-benchmark
+          path: kernel_compile_benchmark.md
+
+  parallel-stress-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        job_id: ${{ fromJson(format('[{0}]', join(',',[1,2,3,4]))) }}
+    steps:
+      - name: 安装压力测试工具
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y stress-ng
+          
+      - name: 运行并行压力测试
+        run: |
+          echo "## 并行压力测试 #${{ matrix.job_id }}" > parallel_stress_test_${{ matrix.job_id }}.md
+          echo '```' >> parallel_stress_test_${{ matrix.job_id }}.md
+          
+          # 获取测试持续时间（分钟）
+          DURATION="${{ github.event.inputs.test_duration }}"
+          
+          # 运行CPU、内存、IO压力测试
+          stress-ng --cpu $(nproc) --vm 2 --vm-bytes 1G --io 4 --timeout ${DURATION}m --metrics-brief 2>&1 | tee -a parallel_stress_test_${{ matrix.job_id }}.md
+          echo '```' >> parallel_stress_test_${{ matrix.job_id }}.md
+          
+      - name: 上传并行压力测试结果
+        uses: actions/upload-artifact@v3
+        with:
+          name: parallel-stress-test-${{ matrix.job_id }}
+          path: parallel_stress_test_${{ matrix.job_id }}.md
+
+  compile-performance-scaling:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 安装编译工具和性能测试工具
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential time clang python3
+      
+      - name: 创建测试程序
+        run: |
+          mkdir test_project
+          cd test_project
+          
+          # 创建一个简单但计算密集型的C程序
+          cat > compute.c << 'EOF'
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <math.h>
+          
+          #define SIZE 1000
+          
+          double compute_intensive(int iterations) {
+              double result = 0.0;
+              double **matrix = (double**)malloc(SIZE * sizeof(double*));
+              for (int i = 0; i < SIZE; i++) {
+                  matrix[i] = (double*)malloc(SIZE * sizeof(double));
+                  for (int j = 0; j < SIZE; j++) {
+                      matrix[i][j] = sin(i) * cos(j);
+                  }
+              }
+              
+              for (int iter = 0; iter < iterations; iter++) {
+                  for (int i = 0; i < SIZE; i++) {
+                      for (int j = 0; j < SIZE; j++) {
+                          result += sqrt(fabs(matrix[i][j])) * log(1 + fabs(matrix[i][j]));
+                      }
+                  }
+              }
+              
+              for (int i = 0; i < SIZE; i++) {
+                  free(matrix[i]);
+              }
+              free(matrix);
+              
+              return result;
+          }
+          
+          int main(int argc, char* argv[]) {
+              int iterations = 1;
+              if (argc > 1) {
+                  iterations = atoi(argv[1]);
+              }
+              double result = compute_intensive(iterations);
+              printf("Result: %f\n", result);
+              return 0;
+          }
+          EOF
+          
+          # 创建用于生成多个源文件的Python脚本
+          cat > generate_files.py << 'EOF'
+          import os
+          
+          template = """
+          #include <math.h>
+          
+          double compute_file_{file_num}(int n) {{
+              double result = 0.0;
+              for (int i = 0; i < n; i++) {{
+                  result += sin(i * {file_num}) * cos(i / ({file_num} + 0.1));
+              }}
+              return result;
+          }}
+          """
+          
+          header = """
+          #ifndef FUNCTIONS_H
+          #define FUNCTIONS_H
+          
+          {prototypes}
+          
+          #endif
+          """
+          
+          prototypes = ""
+          
+          for i in range(100):
+              with open(f"file_{i}.c", "w") as f:
+                  f.write(template.format(file_num=i+1))
+              prototypes += f"double compute_file_{i}(int n);\n"
+          
+          with open("functions.h", "w") as f:
+              f.write(header.format(prototypes=prototypes))
+          
+          with open("main.c", "w") as f:
+              f.write("#include <stdio.h>\n")
+              f.write("#include \"functions.h\"\n\n")
+              f.write("int main(int argc, char* argv[]) {\n")
+              f.write("    int n = 1000000;\n")
+              f.write("    double total = 0.0;\n\n")
+              for i in range(100):
+                  f.write(f"    total += compute_file_{i}(n);\n")
+              f.write("\n    printf(\"Total: %f\\n\", total);\n")
+              f.write("    return 0;\n")
+              f.write("}\n")
+          EOF
+          
+          # 生成多个源文件
+          python3 generate_files.py
+          
+          # 创建Makefile
+          cat > Makefile << 'EOF'
+          CC = gcc
+          CFLAGS = -O2 -Wall -lm
+          
+          SOURCES = $(wildcard *.c)
+          OBJECTS = $(SOURCES:.c=.o)
+          
+          all: main
+          
+          main: $(OBJECTS)
+              $(CC) -o $@ $^ $(CFLAGS)
+          
+          %.o: %.c
+              $(CC) -c -o $@ $< $(CFLAGS)
+          
+          clean:
+              rm -f *.o main
+          EOF
+      
+      - name: 测试多线程编译扩展性
+        run: |
+          cd test_project
+          echo "## 编译性能扩展性测试" > ../compile_scaling.md
+          echo "### 多线程编译时间测试" >> ../compile_scaling.md
+          echo "| 线程数 | 编译时间 (秒) |" >> ../compile_scaling.md
+          echo "|--------|--------------|" >> ../compile_scaling.md
+          
+          for threads in 1 2 4 8 $(nproc); do
+            make clean > /dev/null
+            start_time=$(date +%s.%N)
+            make -j$threads > /dev/null
+            end_time=$(date +%s.%N)
+            duration=$(echo "$end_time - $start_time" | bc)
+            echo "| $threads | $duration |" >> ../compile_scaling.md
+          done
+          
+      - name: 上传编译扩展性测试结果
+        uses: actions/upload-artifact@v3
+        with:
+          name: compile-scaling
+          path: compile_scaling.md
+
+  summary:
+    needs: [system-info, cpu-benchmark, memory-benchmark, disk-benchmark, kernel-compile-benchmark, parallel-stress-test, compile-performance-scaling]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下载所有测试结果
+        uses: actions/download-artifact@v3
+        
+      - name: 整合测试结果
+        run: |
+          echo "# GitHub Actions 性能测试结果汇总" > summary.md
+          
+          echo "## 系统信息" >> summary.md
+          cat system-info/system_info.md >> summary.md
+          
+          echo "## CPU 性能" >> summary.md
+          cat cpu-benchmark/cpu_benchmark.md >> summary.md
+          
+          echo "## 内存性能" >> summary.md
+          cat memory-benchmark/memory_benchmark.md >> summary.md
+          
+          echo "## 磁盘性能" >> summary.md
+          cat disk-benchmark/disk_benchmark.md >> summary.md
+          
+          echo "## 内核编译性能" >> summary.md
+          cat kernel-compile-benchmark/kernel_compile_benchmark.md >> summary.md
+          
+          echo "## 并行压力测试结果" >> summary.md
+          for id in {1..4}; do
+            if [ -d "parallel-stress-test-$id" ]; then
+              cat parallel-stress-test-$id/parallel_stress_test_$id.md >> summary.md
+            fi
+          done
+          
+          echo "## 编译扩展性" >> summary.md
+          cat compile-scaling/compile_scaling.md >> summary.md
+          
+          echo "## 总结与分析" >> summary.md
+          echo "此测试提供了 GitHub Actions 运行环境的全面性能分析，可用于评估其对内核编译等计算密集型任务的适用性。" >> summary.md
+          echo "在决定是否使用 GitHub Actions 进行内核编译时，请参考上述测试结果，特别是多线程编译性能和资源扩展性。" >> summary.md
+          
+      - name: 上传汇总报告
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-summary
+          path: summary.md
+
