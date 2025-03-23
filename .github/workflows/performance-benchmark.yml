@@ -173,7 +173,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        job_id: ${{ fromJson(format('[{0}]', join(',',[1,2,3,4]))) }}
+        job_id: [1, 2, 3, 4]  # 修复后的矩阵定义
     steps:
       - name: 安装压力测试工具
         run: |
@@ -395,4 +395,3 @@ jobs:
         with:
           name: performance-summary
           path: summary.md
-
