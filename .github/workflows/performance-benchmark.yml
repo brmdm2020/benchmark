@@ -76,25 +76,26 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y sysbench
-          
+        
       - name: 内存性能测试
         run: |
           echo "## 内存性能测试结果" > memory_benchmark.md
           echo "### 内存读取性能" >> memory_benchmark.md
           echo '```' >> memory_benchmark.md
-          sysbench memory --memory-block-size=1K --memory-total-size=100G --memory-access-mode=seq read run >> memory_benchmark.md
+          sysbench memory --memory-block-size=1K --memory-total-size=100G --memory-access-mode=seq read >> memory_benchmark.md
           echo '```' >> memory_benchmark.md
-          
+        
           echo "### 内存写入性能" >> memory_benchmark.md
           echo '```' >> memory_benchmark.md
-          sysbench memory --memory-block-size=1K --memory-total-size=100G --memory-access-mode=seq write run >> memory_benchmark.md
+          sysbench memory --memory-block-size=1K --memory-total-size=100G --memory-access-mode=seq write >> memory_benchmark.md
           echo '```' >> memory_benchmark.md
-          
+        
       - name: 上传内存测试结果
         uses: actions/upload-artifact@v4
         with:
           name: memory-benchmark
           path: memory_benchmark.md
+
 
   disk-benchmark:
     runs-on: ubuntu-latest
@@ -311,20 +312,20 @@ jobs:
           cat > Makefile << 'EOF'
           CC = gcc
           CFLAGS = -O2 -Wall -lm
-          
+
           SOURCES = $(wildcard *.c)
           OBJECTS = $(SOURCES:.c=.o)
-          
+
           all: main
-          
+
           main: $(OBJECTS)
-              $(CC) -o $@ $^ $(CFLAGS)
-          
+	          $(CC) -o $@ $^ $(CFLAGS)
+
           %.o: %.c
-              $(CC) -c -o $@ $< $(CFLAGS)
-          
+	          $(CC) -c -o $@ $< $(CFLAGS)
+
           clean:
-              rm -f *.o main
+	          rm -f *.o main
           EOF
       
       - name: 测试多线程编译扩展性
