@@ -37,7 +37,7 @@ jobs:
           cat /proc/cpuinfo | grep "model name" | head -1 >> system_info.md
           
       - name: 上传系统信息
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: system-info
           path: system_info.md
@@ -64,7 +64,7 @@ jobs:
           echo '```' >> cpu_benchmark.md
           
       - name: 上传CPU测试结果
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cpu-benchmark
           path: cpu_benchmark.md
@@ -91,7 +91,7 @@ jobs:
           echo '```' >> memory_benchmark.md
           
       - name: 上传内存测试结果
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: memory-benchmark
           path: memory_benchmark.md
@@ -123,7 +123,7 @@ jobs:
           echo '```' >> disk_benchmark.md
           
       - name: 上传磁盘测试结果
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: disk-benchmark
           path: disk_benchmark.md
@@ -164,7 +164,7 @@ jobs:
           echo '```' >> ../kernel_compile_benchmark.md
           
       - name: 上传内核编译测试结果
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: kernel-compile-benchmark
           path: kernel_compile_benchmark.md
@@ -193,7 +193,7 @@ jobs:
           echo '```' >> parallel_stress_test_${{ matrix.job_id }}.md
           
       - name: 上传并行压力测试结果
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: parallel-stress-test-${{ matrix.job_id }}
           path: parallel_stress_test_${{ matrix.job_id }}.md
@@ -345,7 +345,7 @@ jobs:
           done
           
       - name: 上传编译扩展性测试结果
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: compile-scaling
           path: compile_scaling.md
@@ -355,7 +355,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 下载所有测试结果
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         
       - name: 整合测试结果
         run: |
@@ -391,7 +391,7 @@ jobs:
           echo "在决定是否使用 GitHub Actions 进行内核编译时，请参考上述测试结果，特别是多线程编译性能和资源扩展性。" >> summary.md
           
       - name: 上传汇总报告
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: performance-summary
           path: summary.md
