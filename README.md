@@ -3,7 +3,7 @@
 
 # GitHub Flavored Markdown (GFM) 语法测试大全
 
-这是一份全面的 GFM 语法测试文件，旨在展示和测试 GitHub Flavored Markdown 的各种功能。
+这份文件旨在全面测试和展示 **GitHub Flavored Markdown (GFM)** 的各种语法特性，可直接用于你的 `README.md` 文件。
 
 ## 目录
 1.  基础语法 [<sup>1</sup>](#基础语法)
@@ -200,7 +200,7 @@ ___
 
 ### 代码块
 
-使用三个反引号 ` ``` ` 来创建代码块，并可以指定语言以实现语法高亮。 [1]
+使用三个反引号 ` ``` ` 来创建代码块，并可以指定语言以实现语法高亮。
 
 ````markdown
 ```javascript
@@ -223,7 +223,8 @@ print(add(5, 3))
 ```diff
 - 删除的行
 + 添加的行
-```````
+```
+````
 
 **效果:**
 
@@ -258,9 +259,9 @@ print(add(5, 3))
 GitHub 官网 [<sup>25</sup>](https://github.com "GitHub 的 Title")
 
 <!-- 引用样式链接 -->
-[GitHub] 是一个代码托管平台。
+[GitHub][ref-link] 是一个代码托管平台。
 
-: https://github.com/
+[ref-link]: https://github.com/
 
 <!-- 自动链接 -->
 <https://github.com>
@@ -270,27 +271,27 @@ GitHub 官网 [<sup>25</sup>](https://github.com "GitHub 的 Title")
 
 GitHub 官网 [<sup>25</sup>](https://github.com "GitHub 的 Title")
 
-[GitHub][1] 是一个代码托管平台。
+[GitHub][ref-link] 是一个代码托管平台。
+
+[ref-link]: https://github.com/
 
 <https://github.com>
-
-[1]: https://github.com/
 
 ### 图片
 
 ```markdown
 <!-- 内联图片 -->
-!GitHub Logo [<sup>26</sup>](https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png "GitHub Logo")
+!示例图片 [<sup>26</sup>](https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAALgmWivrtHUSilEMUhX4R9ZZnDVItNiAALjFgAC1AOAVUPilWy3hWiXNgQ.png "这是一个示例图片")
 
 <!-- 带链接的图片 -->
-![GitHub Logo [<sup>26</sup>](https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png "GitHub Logo")](https://github.com)
+![示例图片 [<sup>27</sup>](https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAALgmWivrtHUSilEMUhX4R9ZZnDVItNiAALjFgAC1AOAVUPilWy3hWiXNgQ.png "点击图片访问 GitHub")](https://github.com)
 ```
 
 **效果:**
 
-!GitHub Logo [<sup>26</sup>](https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png "GitHub Logo")
+!示例图片 [<sup>26</sup>](https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAALgmWivrtHUSilEMUhX4R9ZZnDVItNiAALjFgAC1AOAVUPilWy3hWiXNgQ.png "这是一个示例图片")
 
-![GitHub Logo [<sup>26</sup>](https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png "GitHub Logo")](https://github.com)
+![示例图片 [<sup>27</sup>](https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAALgmWivrtHUSilEMUhX4R9ZZnDVItNiAALjFgAC1AOAVUPilWy3hWiXNgQ.png "点击图片访问 GitHub")](https://github.com)
 
 ## GFM 扩展语法
 
@@ -336,18 +337,18 @@ GitHub 官网 [<sup>25</sup>](https://github.com "GitHub 的 Title")
 
 ### 提及 (Mentions)
 
-可以直接 @ 某个用户或团队。
+可以直接 @ 某个用户或团队。如果该用户真实存在，他将会收到通知。
 
 ```markdown
-@github, 这是一个很棒的功能！
+@username-that-does-not-exist, 这是一个测试提及功能。
 ```
 
-**效果:** (在 GitHub 环境下会高亮并通知相关用户)
-@github, 这是一个很棒的功能！
+**效果:**
+@username-that-does-not-exist, 这是一个测试提及功能。
 
 ### 议题和拉取请求引用
 
-可以直接引用仓库内的议题（Issue）或拉取请求（Pull Request）。
+在仓库内，可以直接通过 `#` 加上数字来引用议题（Issue）或拉取请求（Pull Request）。
 
 ```markdown
 修复了 #123 中提到的 bug。
@@ -390,7 +391,7 @@ GitHub 官网 [<sup>25</sup>](https://github.com "GitHub 的 Title")
 
 ### 警告框 (Alerts)
 
-这是 GFM 新增的特性，用于创建不同类型的提示信息。 [1]
+这是 GFM 新增的特性，用于创建不同类型的提示信息。
 
 ```markdown
 > [!NOTE]
@@ -458,59 +459,64 @@ GitHub 官网 [<sup>25</sup>](https://github.com "GitHub 的 Title")
 
 ### 数学表达式
 
-GFM 支持使用 KaTeX 来渲染数学公式。 [1]
+GFM 支持使用 KaTeX 来渲染数学公式。行内公式使用 `$` 包围，块级公式建议使用 ` ```math ` 代码块以获得最佳兼容性。
 
 ````markdown
-行内公式使用 `$` 包围： $E=mc^2$
+行内公式： $E=mc^2$
 
-块级公式使用 `$$` 包围：
-$$
-\frac{\partial u}{\partial t} = h^2 \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} + \frac{\partial^2 u}{\partial z^2} \right)
-$$
-
-或者使用 ` ```math ` 代码块：
+块级公式 (推荐方式):
 ```math
 \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
 ```
+
+另一种块级公式语法（`$$`）在某些 Markdown 环境下可能不被支持：
+$$
+\frac{\partial u}{\partial t} = h^2 \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} + \frac{\partial^2 u}{\partial z^2} \right)
+$$
 ````
 
 **效果:**
 
-行内公式使用 `$` 包围： $E=mc^2$
+行内公式： $E=mc^2$
 
-块级公式使用 `$$` 包围：
-$$
-\frac{\partial u}{\partial t} = h^2 \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} + \frac{\partial^2 u}{\partial z^2} \right)
-$$
-
-或者使用 ` ```math ` 代码块：
+块级公式 (推荐方式):
 ```math
 \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
 ```
 
+另一种块级公式语法（`$$`）在某些 Markdown 环境下可能不被支持：
+$$
+\frac{\partial u}{\partial t} = h^2 \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} + \frac{\partial^2 u}{\partial z^2} \right)
+$$
+
 ### HTML
 
-GFM 支持内联 HTML。
+GFM 支持内联 HTML，但会过滤掉潜在的危险标签和属性（如 `<script>`, `style` 等）。
 
 ```html
-<!-- 你可以直接在 Markdown 中使用 HTML 标签 -->
-<p style="color:red;">这是一个红色的段落。</p>
+<!-- 你可以直接在 Markdown 中使用部分安全的 HTML 标签 -->
+<p>这是一个普通的 HTML 段落标签。</p>
 
 <div>
   <h3>HTML 块级元素</h3>
-  <p>这是一个 div 容器内的段落。</p>
+  <p>这是一个 <code>div</code> 容器内的段落。</p>
 </div>
+
+<!-- 注意：下面的 style 属性会被 GitHub 过滤掉，因此不会显示为红色 -->
+<p style="color:red;">这个段落不会是红色的。</p>
 ```
 
 **效果:**
 
-<!-- 你可以直接在 Markdown 中使用 HTML 标签 -->
-<p style="color:red;">这是一个红色的段落。</p>
+<!-- 你可以直接在 Markdown 中使用部分安全的 HTML 标签 -->
+<p>这是一个普通的 HTML 段落标签。</p>
 
 <div>
   <h3>HTML 块级元素</h3>
-  <p>这是一个 div 容器内的段落。</p>
+  <p>这是一个 <code>div</code> 容器内的段落。</p>
 </div>
 
----
+<!-- 注意：下面的 style 属性会被 GitHub 过滤掉，因此不会显示为红色 -->
+<p style="color:red;">这个段落不会是红色的。</p>
 
+---
