@@ -27,13 +27,13 @@ jobs:
       run: |
         cat << 'EOF' > benchmark.sh
         #!/bin/bash
-        set -eo pipefail
+        set -euo pipefail
         
         # 精简版依赖安装
         install_deps() {
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            build-essential git time sysbench fio bc \
+            build-essential git time sysbench fio bc jq \
             libssl-dev flex bison libelf-dev mbw
         }
 
@@ -42,7 +42,7 @@ jobs:
           git clone --depth 1 --branch v6.6 \
             https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
           cd linux
-          make localmodconfig  # 更小配置
+          yes "" | make localmodconfig  # 更小配置，自动确认
           time make -j$(nproc)
           make clean
         }
@@ -58,7 +58,7 @@ jobs:
 
           echo "=== 磁盘测试 ==="
           fio --name=seqwrite --rw=write --bs=1M --size=500M --runtime=10s \
-            --end_fsync=1 --output-format=json | jq '.jobs[0].write.bw/1024 | floor' | awk '{print $1"MB/s"}'
+            --end_fsync=1 --output-format=json | jq '.jobs[0].write.bw/1024 | floor' | awk '{print $1" MB/s"}'
           
           echo "=== 内核编译 ==="
           compile_kernel
