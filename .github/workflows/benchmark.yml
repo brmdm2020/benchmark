@@ -28,7 +28,7 @@ jobs:
         cat << 'EOF' > benchmark.sh
         #!/bin/bash
         set -euo pipefail
-        
+
         # 精简版依赖安装
         install_deps() {
           sudo apt-get update -qq
@@ -52,14 +52,15 @@ jobs:
           echo "🟢 开始基准测试 @ $(date)"
           echo "=== CPU测试 ==="
           sysbench cpu --threads=$(nproc) run | grep 'events per second'
-          
+
           echo "=== 内存测试 ==="
           mbw -q 256 | grep AVG
 
           echo "=== 磁盘测试 ==="
           fio --name=seqwrite --rw=write --bs=1M --size=500M --runtime=10s \
-            --end_fsync=1 --output-format=json | jq '.jobs[0].write.bw/1024 | floor' | awk '{print $1" MB/s"}'
-          
+            --end_fsync=1 --output-format=json | \
+            jq '.jobs[0].write.bw/1024 | floor' | awk '{print $1" MB/s"}'
+
           echo "=== 内核编译 ==="
           compile_kernel
         }
